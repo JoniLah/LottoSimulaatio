@@ -1,19 +1,22 @@
 import React from 'react';
 import './SelectedNumbers.css';
 
-const SelectedNumbers = ({ selectedNumbers }) => {
+const SelectedNumbers = ({ selectedNumbers, winningNumbers }) => {
   const sortedNumbers = [...selectedNumbers].sort((a, b) => a - b);
 
   return (
     <div className="selected-numbers">
-      <h2>Selected Numbers:</h2>
-      <div>
-        {sortedNumbers.map(number => (
-          <span key={number} className="selected-number">
+      {sortedNumbers.map(number => {
+        const isWinningNumber = winningNumbers.length > 0 && winningNumbers.includes(number);
+        return (
+          <span
+            key={number}
+            className={`selected-number ${isWinningNumber ? 'winning-number' : ''}`}
+          >
             {number}
           </span>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 };
