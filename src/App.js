@@ -18,13 +18,16 @@ function App() {
 
   const handlePayment = () => {
     if (totalCost <= balance) {
-      const newWinningNumbers = generateWinningNumbers().sort((a, b) => a - b);
-      setWinningNumbers(newWinningNumbers);
+      if (winningNumbers.length === 0) {
+        const newWinningNumbers = generateWinningNumbers().sort((a, b) => a - b);
+        console.log("newWinningNumbers: " + newWinningNumbers);
+        setWinningNumbers(newWinningNumbers);
+      }
       setRoundCompleted(true); // Mark the round as completed
   
       setBalance(prevBalance => prevBalance - totalCost);
     } else {
-      alert('Insufficient balance.');
+      alert('Ei riittävästi saldoa.');
     }
   };
 
@@ -110,7 +113,7 @@ function App() {
             Valitse 100 satunnaista riviä
           </button>
           <button className="btn btn-primary random-rows" onClick={() => pickRandomRows(10000)}>
-            Valitse 10000 satunnaista riviä
+            Valitse 10 000 satunnaista riviä
           </button>
         </div>
       </div>
@@ -121,7 +124,7 @@ function App() {
           )}
           <NumberPicker selectedNumbers={selectedNumbers} onNumberClick={handleNumberClick} />
           <div className="selected-numbers-live">
-            <SelectedNumbers selectedNumbers={selectedNumbers} />
+            <SelectedNumbers selectedNumbers={selectedNumbers} winningNumbers={winningNumbers} />
             <button
               onClick={handleAddRow}
               disabled={selectedNumbers.length !== 7}
@@ -135,7 +138,7 @@ function App() {
             <div key={row.key} className="selected-row">
               <SelectedNumbers
                 selectedNumbers={row.numbers}
-                winningNumbers={winningNumbers}
+                winningNumbers={winningNumbers} // Passing winningNumbers prop here
               />
               <button onClick={() => handleDeleteRow(index)}>Poista</button>
             </div>

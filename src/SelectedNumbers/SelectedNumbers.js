@@ -6,17 +6,14 @@ const SelectedNumbers = ({ selectedNumbers, winningNumbers }) => {
 
   return (
     <div className="selected-numbers">
-      {sortedNumbers.map(number => {
-        const isWinningNumber = winningNumbers.length > 0 && winningNumbers.includes(number);
-        return (
-          <span
-            key={number}
-            className={`selected-number ${isWinningNumber ? 'winning-number' : ''}`}
-          >
-            {number}
-          </span>
-        );
-      })}
+      {sortedNumbers.map(number => (
+        <span
+          key={number}
+          className={`selected-number ${winningNumbers.includes(number) ? 'winning-number' : ''}`}
+        >
+          {number}
+        </span>
+      ))}
     </div>
   );
 };

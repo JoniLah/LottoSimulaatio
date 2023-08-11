@@ -8,9 +8,7 @@ const WinningNumbers = ({ selectedRows }) => {
 
   useEffect(() => {
     if (selectedRows.length > 0 && !winningNumbersGenerated) {
-      console.log("Generating winning numbers..."); // Add this line
-      const newWinningNumbers = generateWinningNumbers().sort((a, b) => a - b); // Sort the winning numbers
-      console.log("Generated winning numbers:", newWinningNumbers); // Add this line
+      const newWinningNumbers = generateWinningNumbers().sort((a, b) => a - b);
       setWinningNumbers(newWinningNumbers);
       setWinningNumbersGenerated(true);
     }
