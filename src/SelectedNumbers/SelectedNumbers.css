@@ -8,7 +8,7 @@
     flex-direction: row;
 }
 
-.selected-number {
+.selected-row .selected-number {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -24,6 +24,6 @@
     border-radius: 50%;
 }
 
-.winning-number {
+.selected-row .winning-number {
     background-color: #f7d200;
 }
