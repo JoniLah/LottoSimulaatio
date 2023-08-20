@@ -1,0 +1,60 @@
+.game-selection-title {
+    color: white;
+    font-family: 'Kanit', sans-serif;
+}
+
+.game-selection-container {
+    background: linear-gradient(352deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);
+}
+
+.game-card {
+    width: 110px;
+    height: 110px;
+    border: 1px solid gainsboro;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    font-weight: bold;
+    text-align: center;
+}
+
+.game-card:hover {
+    cursor: pointer;
+}
+
+.game-card.lottery {
+    background-color: #ffdd00;
+}
+
+.game-card.lottery:hover {
+    background-color: #ffc800;
+}
+
+.game-card.eurojackpot {
+    background-color: #72008c;
+    color: white;
+}
+
+.game-card.eurojackpot:hover {
+    background-color: #5d0073;
+}
+
+.game-card.all-or-nothing {
+    background-color: #91f0d8;
+    color: #26282b;
+}
+
+.game-card.all-or-nothing:hover {
+    background-color: #54e1be;
+}
+
+.game-card.keno {
+    background-color: #ff9700;
+    color: #26282b;
+}
+
+.game-card.keno:hover {
+    background-color: #fb8900;
+}

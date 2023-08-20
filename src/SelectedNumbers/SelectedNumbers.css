@@ -1,11 +1,21 @@
 .selected-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
 .selected-numbers {
     display: flex;
     flex-direction: row;
+}
+
+.selected-container .selected-row {
+    padding: 10px;
+}
+
+.selected-container .selected-row:nth-child(even) {
+    /* background-color: #f7f6f6; */
+    background-color: #edfaff;
 }
 
 .selected-row .selected-number {
@@ -22,8 +32,27 @@
     -webkit-user-select: none;
     user-select: none;
     border-radius: 50%;
+
+    animation-name: paintBackground;
+    animation-duration: 2s; /* Adjust the duration as needed */
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
 }
 
 .selected-row .winning-number {
     background-color: #f7d200;
+}
+
+.selected-row .selected-number.winning-number-active {
+    background-color: #f7d200;
+    animation: none; /* Disable the animation for the active state */
+}
+
+@keyframes paintBackground {
+    from {
+        background-color: white;
+    }
+    to {
+        background-color: #f7d200;
+    }
 }

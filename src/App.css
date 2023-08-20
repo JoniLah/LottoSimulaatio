@@ -3,6 +3,16 @@ h1, h2, h3, h4, h5, h6, p {
     padding: 0 !important;
 }
 
+svg {
+    color: #454343;
+    transition: color 0.2s ease;
+}
+
+svg:hover {
+    cursor: pointer;
+    color: #2e2c2c;
+}
+
 .selected-container {
     overflow-y: scroll;
     max-height: 335px;
@@ -10,4 +20,19 @@ h1, h2, h3, h4, h5, h6, p {
 
 .random-rows {
     margin-right: 6px;
+}
+
+@keyframes dropAnimation {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+}
+  
+.winning-number {
+    animation: dropAnimation 1s ease-out;
 }
