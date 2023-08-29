@@ -32,7 +32,9 @@
     -webkit-user-select: none;
     user-select: none;
     border-radius: 50%;
+}
 
+.selected-row .selected-number.winning-number {
     animation-name: paintBackground;
     animation-duration: 2s; /* Adjust the duration as needed */
     animation-timing-function: linear;

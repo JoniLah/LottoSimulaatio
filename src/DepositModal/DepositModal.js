@@ -4,7 +4,7 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 
 const DepositModal = ({ show, onClose, onDeposit }) => {
-  const [depositAmount, setDepositAmount] = useState(0);
+  const [depositAmount, setDepositAmount] = useState(100);
 
   const handleDeposit = () => {
     onDeposit(depositAmount);

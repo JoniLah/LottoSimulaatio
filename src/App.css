@@ -3,6 +3,11 @@ h1, h2, h3, h4, h5, h6, p {
     padding: 0 !important;
 }
 
+a {
+    text-decoration: none !important;
+    color: unset !important;
+}
+
 svg {
     color: #454343;
     transition: color 0.2s ease;
@@ -14,7 +19,7 @@ svg:hover {
 }
 
 .selected-container {
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height: 335px;
 }
 
