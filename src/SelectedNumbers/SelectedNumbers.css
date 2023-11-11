@@ -34,7 +34,7 @@
     border-radius: 50%;
 }
 
-.selected-row .selected-number.winning-number {
+.selected-container .selected-row .selected-number.winning-number {
     animation-name: paintBackground;
     animation-duration: 2s; /* Adjust the duration as needed */
     animation-timing-function: linear;
@@ -45,7 +45,7 @@
     background-color: #f7d200;
 }
 
-.selected-row .selected-number.winning-number-active {
+.selected-container .selected-row .selected-number.winning-number-active {
     background-color: #f7d200;
     animation: none; /* Disable the animation for the active state */
 }

@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import NumberPicker from '../../NumberPicker/NumberPicker';
 import SelectedNumbers from '../../SelectedNumbers/SelectedNumbers';
 import WinningNumbers from '../../WinningNumbers/WinningNumbers';
 import { generateWinningNumbers } from '../../utils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
-import 'bootstrap/js/dist/collapse'; // Import Bootstrap Collapse JavaScript module
+import { Accordion } from 'react-bootstrap';
 import './Lottery.css';
 
 function Lottery({ balance, setBalance }) {
@@ -16,128 +15,85 @@ function Lottery({ balance, setBalance }) {
   const [totalCost, setTotalCost] = useState(0);
   const [currentTotalCost, setCurrentTotalCost] = useState(0);
   const [winningNumbers, setWinningNumbers] = useState([]);
+  const [roundWinningNumbers, setRoundWinningNumbers] = useState([]);
   const [roundCompleted, setRoundCompleted] = useState(false);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [keyCounter, setKeyCounter] = useState(0);
-  const [resetting, setResetting] = useState(false);
-  const [firstRoundCompleted, setFirstRoundCompleted] = useState(false);
   const [newRowsSelected, setNewRowsSelected] = useState(false);
-  const [isRoundCompletedAndNumbersDrawn, setIsRoundCompletedAndNumbersDrawn] = useState(false);
   const [accordionVisible, setAccordionVisible] = useState(false);
   const [previousRoundDetails, setPreviousRoundDetails] = useState(null);
-
-  const renderWinningNumbers = () => {
-    return winningNumbers.map((number, index) => (
-      <div
-        key={index}
-        className={`winning-number number-${number} winning-number-active`}
-      >
-        {number}
-      </div>
-    ));
-  };
+  const [previousGames, setPreviousGames] = useState([]);
+  const [firstRoundCompleted, setFirstRoundCompleted] = useState(false);
+  const [newRoundAvailable, setNewRoundAvailable] = useState(false);
+  const [roundWinningNumbersCopy, setRoundWinningNumbersCopy] = useState([]);
+  const [winningNumbersHistory, setWinningNumbersHistory] = useState([]);
 
   useEffect(() => {
     if (roundCompleted && winningNumbersDrawn) {
       const totalWinnings = calculateTotalWinnings();
       setBalance(prevBalance => prevBalance + totalWinnings);
-      setIsRoundCompletedAndNumbersDrawn(true);
-
+      savePreviousRoundDetails();
+      resetRound();
     }
   }, [roundCompleted, winningNumbersDrawn]);
 
-  useEffect(() => {
-    if (roundCompleted && resetting) {
-      const newWinningNumbers = generateWinningNumbers();
-      setWinningNumbers(newWinningNumbers);
-      setRoundCompleted(false);
-      setResetting(false);
-    }
-  }, [roundCompleted, resetting]);
+  const startRound = () => {
+    // Generate new winning numbers for each round
+    // const newWinningNumbers = generateWinningNumbers(Date.now());
+    // setWinningNumbers(newWinningNumbers);
 
-  const handleResetRow = () => {
-    setSelectedNumbers([]);
-  }
+    console.log("AAAAAAAAAAAAA Winning numbers in Lottery component: ", winningNumbers);
+    //setRoundWinningNumbers(newWinningNumbers);
 
-  const handleDrawWinningNumbers = () => {
-    if (!winningNumbersDrawn) {
-      const newWinningNumbers = generateWinningNumbers();
-      setWinningNumbers(newWinningNumbers);
-      setWinningNumbersDrawn(true);
+    //savePreviousRoundDetails();
 
-      // Calculate winnings for each row
-      const updatedRows = rows.map(row => {
-        const matchedNumbers = row.numbers.filter(number => winningNumbers.includes(number));
-        const winnings = calculateWinnings(matchedNumbers.length);
-        return { ...row, winnings };
+    setRoundCompleted(true);
+    setNewRoundAvailable(false);
+
+    setTimeout(() => {
+      const winningNumberElements = document.querySelectorAll('.winning-number');
+      winningNumberElements.forEach((element) => {
+        element.classList.add('winning-number-active');
       });
-      }
+    }, 100);
   };
 
-  // const handlePayment = () => {
-  //   if (totalCost <= balance) {
-  //     setRoundCompleted(true);
-  //     setBalance((prevBalance) => prevBalance - totalCost);
-  //     setTotalCost(0); // Reset the totalCost after payment
-  
-  //     // Trigger the winning number animation after a short delay
-  //     setTimeout(() => {
-  //       const winningNumberElements = document.querySelectorAll('.winning-number');
-  //       winningNumberElements.forEach((element) => {
-  //         element.classList.add('winning-number-active');
-  //       });
-  //     }, 100);
-  
-  //     // Set the first round as completed
-  //     if (!firstRoundCompleted) {
-  //       setFirstRoundCompleted(true);
-  //     }
-  //   } else {
-  //     alert('Ei riittävästi saldoa.');
-  //   }
-  // };
-
-  const handlePayment = () => {
-    console.log("111");
-    if (currentTotalCost <= balance) {
-      console.log(currentTotalCost);
-      // Remove this line as it's not needed here
-      // setWinningNumbers(newWinningNumbers);
-      setRoundCompleted(true);
-      setBalance((prevBalance) => prevBalance - currentTotalCost);
-      setCurrentTotalCost(0); // Reset the current total cost after payment
-  
-      // Trigger the winning number animation after a short delay
-      setTimeout(() => {
-        const winningNumberElements = document.querySelectorAll('.winning-number');
-        winningNumberElements.forEach((element) => {
-          element.classList.add('winning-number-active');
-        });
-      }, 100);
-  
-      // Set the first round as completed
-      if (!firstRoundCompleted) {
-        setFirstRoundCompleted(true);
-      }
-    } else {
-      alert('Ei riittävästi saldoa.');
-    }
+  const resetRound = () => {
+    setWinningNumbers([]);
+    setWinningNumbersDrawn(false);
+    setRoundCompleted(false);
+    //setNewRowsSelected(false);
   };
 
-  const calculateWinnings = (matchedNumbersCount) => {
-    const winningPrizes = [0, 0, 0, 0, 10, 79.75, 3628.14, 13000000];
-    return winningPrizes[matchedNumbersCount];
+  /* GAME LOGIC */
+  const savePreviousRoundDetails = () => {
+    const timestamp = new Date().toLocaleString('fi-FI');
+    const cost = totalCost.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' });
+    const winnings = calculateTotalWinnings();
+    const date = new Date().toLocaleDateString('fi-FI');
+    const roundWinningNumbersCopy = [...roundWinningNumbers];
+    console.log(roundWinningNumbersCopy);
+
+    const roundDetails = {
+      timestamp,
+      selectedNumbers,
+      winningNumbers: roundWinningNumbersCopy,
+      cost,
+      winnings,
+      date
+    };
+
+    setPreviousGames(prevGames => [...prevGames, roundDetails]);
+    setPreviousRoundDetails(roundDetails);
   };
 
-  const handleNumberClick = (number) => {
-    if (selectedNumbers.includes(number)) {
-      setSelectedNumbers(prevSelected => prevSelected.filter(num => num !== number));
-    } else {
-      if (selectedNumbers.length < 7) {
-        setSelectedNumbers(prevSelected => [...prevSelected, number]);
-      }
-    }
+  const handleNewRound = (newWinningNumbers) => {
+    // Update the winning numbers history with the new round's winning numbers
+    //setWinningNumbersHistory([...winningNumbersHistory, newWinningNumbers]);
+    setWinningNumbersHistory((prevHistory) => [...prevHistory, newWinningNumbers]);
   };
 
+  /* ROWS LOGIC */
   const handleAddRow = () => {
     if (selectedNumbers.length === 7) {
       const newRowKey = `row_${performance.now()}`;
@@ -145,12 +101,27 @@ function Lottery({ balance, setBalance }) {
         ...prevRows,
         { key: newRowKey, numbers: selectedNumbers },
       ]);
-      setCurrentTotalCost((prevCost) => prevCost + 1); // Update current total cost
+      setCurrentTotalCost((prevCost) => prevCost + 1);
       setSelectedNumbers([]);
   
-      // Set newRowsSelected to true when adding a row
       setNewRowsSelected(true);
     }
+  };
+
+  const handleResetRow = () => {
+    setSelectedNumbers([]);
+  }
+
+  const handleDeleteRow = (rowIndex) => {
+    const updatedRows = rows.filter((_, index) => index !== rowIndex);
+    setRows(updatedRows);
+    setTotalCost(prevCost => prevCost - 1);
+  };
+
+  const clearAllSelectedRows = () => {
+    setRows([]);
+    setTotalCost(0);
+    setNewRowsSelected(false);
   };
 
   const pickRandomRows = (count) => {
@@ -170,19 +141,22 @@ function Lottery({ balance, setBalance }) {
       setTotalCost((prevCost) => prevCost + 1);
     }
     setKeyCounter((prevKeyCounter) => prevKeyCounter + count);
-  
-    // Set newRowsSelected to true after adding random rows
     setNewRowsSelected(true);
   };
 
-  const handleDeleteRow = (rowIndex) => {
-    const updatedRows = rows.filter((_, index) => index !== rowIndex);
-    setRows(updatedRows);
-    setTotalCost(prevCost => prevCost - 1);
+  /* PAYMENT LOGIC */
+  const handlePayment = () => {
+    if (totalCost <= balance) {
+      setBalance((prevBalance) => prevBalance - totalCost);
+      setPaymentCompleted(true);
+    } else {
+      alert('Ei riittävästi saldoa.');
+    }
   };
 
-  const calculateMatchedNumbers = (selectedNumbers, winningNumbers) => {
-    return selectedNumbers.filter(number => winningNumbers.includes(number)).length;
+  const calculateWinnings = (matchedNumbersCount) => {
+    const winningPrizes = [0, 0, 0, 0, 10, 79.75, 3628.14, 13000000];
+    return winningPrizes[matchedNumbersCount];
   };
 
   const calculateTotalWinnings = () => {
@@ -194,8 +168,50 @@ function Lottery({ balance, setBalance }) {
     return totalWinnings;
   };
 
+  const handleDrawWinningNumbers = () => {
+    if (!winningNumbersDrawn) {
+      setWinningNumbersDrawn(true);
+
+      console.log("in handle draw winnings");
+      if (!firstRoundCompleted) {
+        setFirstRoundCompleted(true);
+      }
+
+      const newWinningNumbers = generateWinningNumbers(Date.now());
+      setWinningNumbers(newWinningNumbers);
+      setRoundWinningNumbers(newWinningNumbers);
+
+      // Call handleNewRound with the newWinningNumbers
+      handleNewRound(newWinningNumbers);
+      
+      //setRoundCompleted(true);
+      setPaymentCompleted(false);
+      setNewRoundAvailable(true);
+    }
+  };
+
+
+
+  const handleNumberClick = (number) => {
+    if (selectedNumbers.includes(number)) {
+      setSelectedNumbers(prevSelected => prevSelected.filter(num => num !== number));
+    } else {
+      if (selectedNumbers.length < 7) {
+        setSelectedNumbers(prevSelected => [...prevSelected, number]);
+      }
+    }
+  };
+
+
+
+  const calculateMatchedNumbers = (selectedNumbers, winningNumbers) => {
+    return selectedNumbers.filter(number => winningNumbers.includes(number)).length;
+  };
+
+  
+
   const handleDrawRemainingNumbers = () => {
-    const remainingNumbers = generateRandomNumbers(); // Generate random numbers
+    const remainingNumbers = generateRandomNumbers();
     const updatedSelectedNumbers = [...selectedNumbers, ...remainingNumbers];
     setSelectedNumbers(updatedSelectedNumbers);
   };
@@ -203,7 +219,7 @@ function Lottery({ balance, setBalance }) {
   const generateRandomNumbers = () => {
     const remainingNumbers = [];
     while (remainingNumbers.length < 7 - selectedNumbers.length) {
-      const randomNumber = Math.floor(Math.random() * 40) + 1; // Adjust the range as needed
+      const randomNumber = Math.floor(Math.random() * 40) + 1;
       if (!selectedNumbers.includes(randomNumber) && !remainingNumbers.includes(randomNumber)) {
         remainingNumbers.push(randomNumber);
       }
@@ -211,27 +227,7 @@ function Lottery({ balance, setBalance }) {
     return remainingNumbers; // Ensure it always returns an array
   };
 
-  const clearAllSelectedRows = () => {
-    setRows([]);
-    setTotalCost(0);
-    setNewRowsSelected(false);
-  };
-
-  // const renderPaymentButton = () => {
-  //   if (newRowsSelected && (!roundCompleted || (roundCompleted && winningNumbersDrawn))) {
-  //     const cost = totalCost.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' });
-  //     return (
-  //       <div>
-  //         <button className="btn btn-success" onClick={handlePayment}>
-  //           Maksa {cost}
-  //         </button>
-  //       </div>
-  //     );
-  //   } else {
-  //     return null; // Hide the "Maksa" button in other cases
-  //   }
-  // };
-
+  /* RENDERING */
   const renderPaymentButton = () => {
     let cost = currentTotalCost;
     if (rows.length > 0 && (!roundCompleted || (roundCompleted && winningNumbersDrawn))) {
@@ -255,35 +251,26 @@ function Lottery({ balance, setBalance }) {
         className="btn btn-primary random-rows"
         onClick={() => pickRandomRows(count)}
       >
-        Valitse {formattedCount} satunnaista riviä
+        {count === 1 ? (
+          `Valitse ${formattedCount} satunnainen rivi`
+        ) : (
+          `Valitse ${formattedCount} satunnaista riviä`
+        )}
       </button>
     );
   }
 
-  const savePreviousRoundDetails = () => {
-    const timestamp = new Date().toLocaleString('fi-FI');
-    const cost = currentTotalCost.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' });
-    const winnings = calculateTotalWinnings();
-    const date = new Date().toLocaleDateString('fi-FI');
-
-    const roundDetails = {
-      timestamp,
-      selectedNumbers,
-      winningNumbers,
-      cost,
-      winnings,
-      date
-    };
-
-    setPreviousRoundDetails(roundDetails);
+  const renderWinningNumbers = () => {
+    return winningNumbers.map((number, index) => (
+      <div
+        key={index}
+        // className={`winning-number number-${number} winning-number-active`}
+        className={`winning-number number-${number} ${winningNumbersDrawn ? 'winning-number-active' : ''}`}
+      >
+        {number}
+      </div>
+    ));
   };
-
-  useEffect(() => {
-    if (roundCompleted && winningNumbersDrawn) {
-      savePreviousRoundDetails();
-      setIsRoundCompletedAndNumbersDrawn(true);
-    }
-  }, [roundCompleted, winningNumbersDrawn]);
 
   return (
     <div className="container mt-5">
@@ -306,7 +293,14 @@ function Lottery({ balance, setBalance }) {
             <NumberPicker selectedNumbers={selectedNumbers} onNumberClick={handleNumberClick} />
             {selectedNumbers.length > 0 ? (
               <div className="selected-numbers-live">
-                <SelectedNumbers selectedNumbers={selectedNumbers} winningNumbers={winningNumbers} handleResetRow={handleResetRow} showResetButton={true} onDrawRemainingNumbers={handleDrawRemainingNumbers} />
+                <SelectedNumbers 
+                  selectedNumbers={selectedNumbers}
+                  winningNumbers={winningNumbers}
+                  handleResetRow={handleResetRow}
+                  showResetButton={true}
+                  onDrawRemainingNumbers={handleDrawRemainingNumbers}
+                  winningNumbersHistory={[]}
+                />
                 {selectedNumbers.length >= 7 ? (
                 <button
                   onClick={handleAddRow}
@@ -332,6 +326,7 @@ function Lottery({ balance, setBalance }) {
                           winningNumbers={winningNumbers}
                           handleResetRow={() => {}}
                           showResetButton={false}
+                          winningNumbersHistory={[]}
                         />
                       </div>
                       <div className="winning-info" style={{display: 'flex', alignSelf: 'center', marginTop: '20px'}}>
@@ -339,7 +334,9 @@ function Lottery({ balance, setBalance }) {
                           <p><span style={{color: 'green', fontWeight: 'bold'}}>Voitto:</span> {calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)).toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
                         )}
                       </div>
-                      <span onClick={() => handleDeleteRow(index)}><FontAwesomeIcon icon={faTrashCan} /></span>
+                      {!roundCompleted && (
+                        <span onClick={() => handleDeleteRow(index)}><FontAwesomeIcon icon={faTrashCan} /></span>
+                      )}
                     </div>
                   ))}
               </div>
@@ -354,12 +351,19 @@ function Lottery({ balance, setBalance }) {
 
         <div className="row mt-3">
           <div className="col-md-12">
-            {roundCompleted && !winningNumbersDrawn ? (
+            {/* {roundCompleted && !winningNumbersDrawn ? ( */}
+            {paymentCompleted ? (
               <button className="btn btn-primary" onClick={handleDrawWinningNumbers}>
                 Arvo numerot
               </button>
             ) : (
-              renderPaymentButton()
+              newRoundAvailable ? (
+                <button className="btn btn-secondary" onClick={startRound}>
+                  Uusi kierros
+                </button>
+              ) : (
+                renderPaymentButton()
+              )
             )}
           </div>
         </div>
@@ -384,7 +388,9 @@ function Lottery({ balance, setBalance }) {
           )}
         </div>
 
-        {roundCompleted && winningNumbersDrawn && (
+        <div>
+          {/* {firstRoundCompleted && winningNumbersDrawn && ( */}
+          {firstRoundCompleted && (
             <button
               className="btn btn-secondary mt-2"
               onClick={() => setAccordionVisible(!accordionVisible)}
@@ -393,89 +399,92 @@ function Lottery({ balance, setBalance }) {
             </button>
           )}
 
-          {accordionVisible && roundCompleted && winningNumbersDrawn && (
-            <div className="accordion mt-3" id="accordionResults">
-              <div className="card">
-                <div className="card-header past-game__container" id="headingResults">
-                  <h2 className="mb-0">
-                    <button
-                      className="btn btn-link w-100"
-                      type="button"
-                      data-toggle="collapse"
-                      data-target="#collapseResults"
-                      aria-expanded="true"
-                      aria-controls="collapseResults"
-                    >
-                      <div className="d-flex flex-row justify-content-between align-items-center w-100 past-game__accordion">
-                        <h4>Lotto</h4>
-                        <div className="d-flex flex-column align-items-end">
-                          <span>Hinta: <strong>{previousRoundDetails.cost}</strong></span>
-                          <span>Arvottu: <strong>{previousRoundDetails.date}</strong></span>
-                        </div>
-                      </div>
-                    </button>
-                  </h2>
-                </div>
-
-                <div
-                  id="collapseResults"
-                  className="collapse"
-                  aria-labelledby="headingResults"
-                  data-parent="#accordionResults"
-                >
-                  <div className="card-body">
-                    {previousRoundDetails && (
-                      <div>
-                        <h5><strong>Edellisen kierroksen tiedot:</strong></h5>
-                        <p><strong>Valitut numerot:</strong> {previousRoundDetails.selectedNumbers.join(', ')}</p>
-                        <p><strong>Voittorivin numerot:</strong> {previousRoundDetails.winningNumbers.join(', ')}</p>
-                        <p><strong>Ajankohta:</strong> {previousRoundDetails.timestamp}</p>
-                        <p><strong>Hinta:</strong> {previousRoundDetails.cost}</p>
-                        {previousRoundDetails.winnings > 0 && (
-                          <p><strong>Voitot:</strong> {previousRoundDetails.winnings.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
-                        )}
-                      </div>
-                    )}
-
-                    {rows.map((row, index) => (
-                      <div key={row.key} className="past-game__row">
-                        <div className="selected-row">
-                          <div className="d-flex flex-row align-items-center">
-                            <small className="mx-2 past-game__index">{index + 1}.</small>
-                            <SelectedNumbers
-                              selectedNumbers={row.numbers}
-                              winningNumbers={winningNumbers}
-                              handleResetRow={() => {}}
-                              showResetButton={false}
-                            />
-
-                          </div>
-                          <div
-                            className="winning-info"
-                            style={{ display: 'flex', alignSelf: 'center', marginTop: '20px' }}
-                          >
-                            {roundCompleted &&
-                              calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)) > 0 && (
-                                <p>
-                                  <span style={{ color: 'green', fontWeight: 'bold' }}>Voitto:</span>{' '}
-                                  {calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)).toLocaleString(
-                                    'fi-FI',
-                                    { style: 'currency', currency: 'EUR' }
-                                  )}
-                                </p>
-                              )}
+          {accordionVisible && (
+            <Accordion defaultActiveKey="0" flush>
+              {previousGames.map((previousGame, index) => (
+                <Accordion.Item eventKey={index} key={index}>
+                  <div className="card">
+                    <div className="card-header past-game__container">
+                      <Accordion.Header className="mb-0">
+                        <div className="btn btn-link w-100">
+                          <div className="d-flex flex-row justify-content-between align-items-center w-100 past-game__accordion">
+                            <h4>Lotto</h4>
+                            <div className="d-flex flex-column align-items-end">
+                              <span>Hinta: <strong>{previousGame.cost}</strong></span>
+                              <span>Arvottu: <strong>{previousGame.date}</strong></span>
+                            </div>
                           </div>
                         </div>
+                      </Accordion.Header>
+                    </div>
+
+                    <Accordion.Body>
+                      <div className="card-body">
+                        <div>
+                          <h5><strong>Edellisen kierroksen tiedot:</strong></h5>
+                          <p><strong>Voittorivin numerot:</strong> {previousGame.winningNumbers.sort((a, b) => a - b).join(', ')}</p>
+                          <p><strong>Ajankohta:</strong> {previousGame.timestamp}</p>
+                          <p><strong>Hinta:</strong> {previousGame.cost}</p>
+                          {previousGame.winnings > 0 && (
+                            <p><strong>Voitot:</strong> {previousGame.winnings.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                    <p>Pelien kokonaiskustannus: {currentTotalCost} €</p>
-                    <p>Pelien voitot: {calculateTotalWinnings().toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
-                    <p>Voitto/yhteenlaskettu tulos: {(calculateTotalWinnings() - currentTotalCost).toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
+
+                      <table className="w-100 past-game__table table table-striped">
+                        <thead>
+                          <tr>
+                            <th>Rivi</th>
+                            <th>Numerot</th>
+                            <th>Osumia</th>
+                            <th>Voitto</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {rows.map((row, index) => (
+                          <tr className="past-game__row" key={row.key}>
+                            <td><small className="mx-2 past-game__index">{index + 1}.</small></td>
+
+                            <td>
+                              <div className="selected-row">
+                                <div className="d-flex flex-row align-items-center">
+                                  <SelectedNumbers
+                                    selectedNumbers={row.numbers}
+                                    winningNumbers={winningNumbers}
+                                    handleResetRow={() => {}}
+                                    showResetButton={false}
+                                    winningNumbersHistory={previousGame.winningNumbers.sort((a, b) => a - b).join(', ')}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+
+                            <td>
+                              {row.numbers.length}
+                            </td>
+
+                            <td>
+                              {roundCompleted &&
+                                calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)) > 0 && (
+                                  <p>
+                                    {calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)).toLocaleString(
+                                      'fi-FI',
+                                      { style: 'currency', currency: 'EUR' }
+                                    )}
+                                  </p>
+                                )}
+                            </td>
+                          </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </Accordion.Body>
                   </div>
-                </div>
-              </div>
-            </div>
+                </Accordion.Item>
+              ))}
+            </Accordion>
           )}
+        </div>
       </div>
     </div>
   );

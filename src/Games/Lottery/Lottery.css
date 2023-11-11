@@ -38,6 +38,7 @@
 
 .past-game__row {
     padding: 4px 12px;
+    vertical-align: middle;
 }
 
 .past-game__index {
@@ -49,4 +50,8 @@
     color: #353535;
     font-family: 'Kanit', sans-serif;
     font-weight: 400;
+}
+
+.past-game__table tr:nth-of-type(even) {
+    background-color: rgb(243, 243, 243);
 }

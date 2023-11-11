@@ -38,6 +38,6 @@ svg:hover {
     }
 }
   
-.winning-number {
+.selected-container .winning-number {
     animation: dropAnimation 1s ease-out;
 }
