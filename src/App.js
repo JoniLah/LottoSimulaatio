@@ -11,6 +11,7 @@ import AllOrNothing from './Games/AllOrNothing/AllOrNothing';
 import Keno from './Games/Keno/Keno';
 import Header from './Header/Header';
 import WebFont from 'webfontloader';
+import { LotteryProvider } from './context/LotteryContext';
 
 function App() {
   const [selectedGame, setSelectedGame] = useState(null);
@@ -55,7 +56,11 @@ function App() {
         <Header balance={balance} onToggleDepositModal={toggleDepositModal} showDeposit={showDeposit} handleDeposit={handleDeposit} />
           <Routes>
             <Route exact path="/" element={<GameSelection onSelectGame={handleSelectGame} />} />
-            <Route exact path="/lottery" element={<Lottery balance={balance} setBalance={setBalance} />} />
+            <Route exact path="/lottery" element={
+              <LotteryProvider>
+                <Lottery balance={balance} setBalance={setBalance} />
+              </LotteryProvider>
+            } />
             <Route path="/eurojackpot" element={<Eurojackpot balance={balance} setBalance={setBalance} />} />
             <Route path="/all-or-nothing" element={<AllOrNothing balance={balance} setBalance={setBalance} />} />
             <Route path="/keno" element={<Keno balance={balance} setBalance={setBalance} />} />

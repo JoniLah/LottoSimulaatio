@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './SelectedNumbers.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan, faShuffle } from '@fortawesome/free-solid-svg-icons';
@@ -9,26 +9,32 @@ const SelectedNumbers = ({
   handleResetRow,
   showResetButton,
   onDrawRemainingNumbers,
-  winningNumbersHistory
+  winningNumbersHistory,
+  winningNumbersDrawn
 }) => {
   const sortedNumbers = [...selectedNumbers].sort((a, b) => a - b);
-  const currentRoundWinningNumbers = winningNumbersHistory[winningNumbersHistory.length - 1] || [];
 
-  console.log("Selected numbers in SelectedNumbers component: ", selectedNumbers);
-  console.log("Winning numbers in SelectedNumbers component: ", winningNumbers);
+  // Check if winningNumbersHistory is not empty and is a string
+  const winningNumbersCopy = winningNumbersHistory && typeof winningNumbersHistory === 'string'
+    ? winningNumbersHistory.split(',').map(Number)
+    : [];
   
   return (
     <div className="selected-numbers">
       <div className="d-flex justify-content-between w-100">
         <div className="d-flex">
-          {sortedNumbers.map((number) => (
-            <span
-              key={number}
-              className={`selected-number ${currentRoundWinningNumbers.includes(number) ? 'winning-number' : ''}`} // Check against currentRoundWinningNumbers
-            >
-              {number}
-            </span>
-          ))}
+          {sortedNumbers.map((number) => {
+            const isWinningNumber = winningNumbersCopy.includes(Number(number));
+            const isWinningNumberLive = winningNumbers.includes(Number(number));
+            return (
+              <span
+                key={number}
+                className={`selected-number ${isWinningNumber ? 'winning-number' : ''} ${isWinningNumberLive && winningNumbersDrawn ? 'winning-number' : ''}`}
+              >
+                {number}
+              </span>
+            );
+          })}
         </div>
 
         {showResetButton && (

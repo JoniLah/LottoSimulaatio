@@ -6,3 +6,9 @@
 .winning-info {
     margin-top: 0 !important;
 }
+
+.winning-numbers-container {
+    box-shadow: 0px 0px 9px 0px rgba(156,156,156,1);
+    padding: 8px 14px;
+    border-radius: 12px;
+}

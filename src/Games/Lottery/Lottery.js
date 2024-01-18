@@ -1,20 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import LotteryContext from '../../context/LotteryContext';
 import NumberPicker from '../../NumberPicker/NumberPicker';
 import SelectedNumbers from '../../SelectedNumbers/SelectedNumbers';
 import WinningNumbers from '../../WinningNumbers/WinningNumbers';
-import { generateWinningNumbers } from '../../utils';
+import GameHistory from './components/GameHistory';
+import GameSettings from './components/GameSettings';
+import GameInfo from './components/GameInfo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
-import { Accordion } from 'react-bootstrap';
 import './Lottery.css';
+import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
 
 function Lottery({ balance, setBalance }) {
+  const { winningPrizes, getWinningNumbers, winningNumbers } = useContext(LotteryContext);
+
   const [winningNumbersDrawn, setWinningNumbersDrawn] = useState(false);
   const [selectedNumbers, setSelectedNumbers] = useState([]);
   const [rows, setRows] = useState([]);
   const [totalCost, setTotalCost] = useState(0);
   const [currentTotalCost, setCurrentTotalCost] = useState(0);
-  const [winningNumbers, setWinningNumbers] = useState([]);
   const [roundWinningNumbers, setRoundWinningNumbers] = useState([]);
   const [roundCompleted, setRoundCompleted] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
@@ -27,6 +32,7 @@ function Lottery({ balance, setBalance }) {
   const [newRoundAvailable, setNewRoundAvailable] = useState(false);
   const [roundWinningNumbersCopy, setRoundWinningNumbersCopy] = useState([]);
   const [winningNumbersHistory, setWinningNumbersHistory] = useState([]);
+  const [roundNumber, setRoundNumber] = useState(0); // Amount of rounds played, used to previousGame array to index old game stats
 
   useEffect(() => {
     if (roundCompleted && winningNumbersDrawn) {
@@ -38,15 +44,6 @@ function Lottery({ balance, setBalance }) {
   }, [roundCompleted, winningNumbersDrawn]);
 
   const startRound = () => {
-    // Generate new winning numbers for each round
-    // const newWinningNumbers = generateWinningNumbers(Date.now());
-    // setWinningNumbers(newWinningNumbers);
-
-    console.log("AAAAAAAAAAAAA Winning numbers in Lottery component: ", winningNumbers);
-    //setRoundWinningNumbers(newWinningNumbers);
-
-    //savePreviousRoundDetails();
-
     setRoundCompleted(true);
     setNewRoundAvailable(false);
 
@@ -59,7 +56,7 @@ function Lottery({ balance, setBalance }) {
   };
 
   const resetRound = () => {
-    setWinningNumbers([]);
+    //setWinningNumbers([]);
     setWinningNumbersDrawn(false);
     setRoundCompleted(false);
     //setNewRowsSelected(false);
@@ -69,13 +66,14 @@ function Lottery({ balance, setBalance }) {
   const savePreviousRoundDetails = () => {
     const timestamp = new Date().toLocaleString('fi-FI');
     const cost = totalCost.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' });
+    const round = roundNumber;
     const winnings = calculateTotalWinnings();
     const date = new Date().toLocaleDateString('fi-FI');
     const roundWinningNumbersCopy = [...roundWinningNumbers];
-    console.log(roundWinningNumbersCopy);
 
     const roundDetails = {
       timestamp,
+      roundNumber: round,
       selectedNumbers,
       winningNumbers: roundWinningNumbersCopy,
       cost,
@@ -90,6 +88,7 @@ function Lottery({ balance, setBalance }) {
   const handleNewRound = (newWinningNumbers) => {
     // Update the winning numbers history with the new round's winning numbers
     //setWinningNumbersHistory([...winningNumbersHistory, newWinningNumbers]);
+    setRoundNumber((prevRound) => prevRound +1);
     setWinningNumbersHistory((prevHistory) => [...prevHistory, newWinningNumbers]);
   };
 
@@ -155,7 +154,6 @@ function Lottery({ balance, setBalance }) {
   };
 
   const calculateWinnings = (matchedNumbersCount) => {
-    const winningPrizes = [0, 0, 0, 0, 10, 79.75, 3628.14, 13000000];
     return winningPrizes[matchedNumbersCount];
   };
 
@@ -168,21 +166,20 @@ function Lottery({ balance, setBalance }) {
     return totalWinnings;
   };
 
+  // Katso täältä WinningNumbersien setter! Käytä contextia mieluummin
   const handleDrawWinningNumbers = () => {
     if (!winningNumbersDrawn) {
       setWinningNumbersDrawn(true);
 
-      console.log("in handle draw winnings");
       if (!firstRoundCompleted) {
         setFirstRoundCompleted(true);
       }
 
-      const newWinningNumbers = generateWinningNumbers(Date.now());
-      setWinningNumbers(newWinningNumbers);
-      setRoundWinningNumbers(newWinningNumbers);
+      const newWinningNumbers = getWinningNumbers(Date.now());
+      setRoundWinningNumbers(winningNumbers);
 
       // Call handleNewRound with the newWinningNumbers
-      handleNewRound(newWinningNumbers);
+      handleNewRound(winningNumbers);
       
       //setRoundCompleted(true);
       setPaymentCompleted(false);
@@ -248,7 +245,7 @@ function Lottery({ balance, setBalance }) {
     return (
       <button
         key={count}
-        className="btn btn-primary random-rows"
+        className="random-rows"
         onClick={() => pickRandomRows(count)}
       >
         {count === 1 ? (
@@ -264,8 +261,7 @@ function Lottery({ balance, setBalance }) {
     return winningNumbers.map((number, index) => (
       <div
         key={index}
-        // className={`winning-number number-${number} winning-number-active`}
-        className={`winning-number number-${number} ${winningNumbersDrawn ? 'winning-number-active' : ''}`}
+        className={`winning-number number-${number} ${winningNumbersDrawn ? 'winning-number-active winning-number-falling' : ''}`}
       >
         {number}
       </div>
@@ -275,216 +271,199 @@ function Lottery({ balance, setBalance }) {
   return (
     <div className="container mt-5">
       <div className="row mb-3">
-        <div className="row my-3">
-          <div className="col-md-12">
-            {renderRandomRowButton(1)}
-            {renderRandomRowButton(5)}
-            {renderRandomRowButton(10)}
-            {renderRandomRowButton(100)}
-            {renderRandomRowButton(10000)}
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="col-md-6">
-            {selectedNumbers.length < 7 && (
-              <small>Valitse {7 - selectedNumbers.length === 1 ? 'vielä 1 numero' : `${7 - selectedNumbers.length} numeroa`}</small>
-            )}
-            <NumberPicker selectedNumbers={selectedNumbers} onNumberClick={handleNumberClick} />
-            {selectedNumbers.length > 0 ? (
-              <div className="selected-numbers-live">
-                <SelectedNumbers 
-                  selectedNumbers={selectedNumbers}
-                  winningNumbers={winningNumbers}
-                  handleResetRow={handleResetRow}
-                  showResetButton={true}
-                  onDrawRemainingNumbers={handleDrawRemainingNumbers}
-                  winningNumbersHistory={[]}
-                />
-                {selectedNumbers.length >= 7 ? (
-                <button
-                  onClick={handleAddRow}
-                  disabled={selectedNumbers.length !== 7}
-                  className="btn btn-warning mt-2"
-                >
-                  Lisää rivi
-                </button>
-                ) : null}
+        <Tabs
+          defaultActiveKey="lottery"
+          transition={false}
+          id="noanim-tab-example"
+          className="mb-3"
+        >
+          <Tab eventKey="lottery" title="Lotto">
+            {!paymentCompleted && !newRoundAvailable &&
+              <div className="row my-3">
+                <div className="col-md-12">
+                  {renderRandomRowButton(1)}
+                  {renderRandomRowButton(10)}
+                  {renderRandomRowButton(100)}
+                  {renderRandomRowButton(1000)}
+                </div>
               </div>
-            ) : null}
-          </div>
+            }
 
-          <div className="col-md-6">
-            <div className="d-flex flex-column align-items-end">
-              <div className="selected-container w-100">
-                {rows.map((row, index) => (
-                    <div key={row.key} className="selected-row">
-                      <div className="d-flex flex-row align-items-center">
-                        <small className="mx-2">{index + 1}.</small>
-                        <SelectedNumbers
-                          selectedNumbers={row.numbers}
+            <div className="row">
+              {paymentCompleted ?
+                (
+                <div className="col-md-6">
+                  {newRoundAvailable && (
+                    <div className="winning-numbers-animation">
+                      {winningNumbersDrawn && (
+                        winningNumbers.map((number) => {
+                          return number;
+                        })
+                      )}
+                      {/* {renderWinningNumbers()} */}
+                    </div>
+                  )}
+                </div>
+                ) : (
+                  <div className="col-md-6">
+                  {!newRoundAvailable && (
+                    <>
+                    {selectedNumbers.length < 7 && (
+                      <small><strong>Valitse {7 - selectedNumbers.length === 1 ? 'vielä 1 numero' : `${7 - selectedNumbers.length} numeroa`}</strong></small>
+                    )}
+                    <NumberPicker selectedNumbers={selectedNumbers} onNumberClick={handleNumberClick} />
+                    {selectedNumbers.length > 0 ? (
+                      <div className="selected-numbers-live">
+                        <SelectedNumbers 
+                          selectedNumbers={selectedNumbers}
                           winningNumbers={winningNumbers}
-                          handleResetRow={() => {}}
-                          showResetButton={false}
+                          handleResetRow={handleResetRow}
+                          showResetButton={true}
+                          onDrawRemainingNumbers={handleDrawRemainingNumbers}
                           winningNumbersHistory={[]}
                         />
+                        {selectedNumbers.length >= 7 ? (
+                        <button
+                          onClick={handleAddRow}
+                          disabled={selectedNumbers.length !== 7}
+                          className="btn btn-warning mt-2"
+                        >
+                          Lisää rivi
+                        </button>
+                        ) : null}
                       </div>
-                      <div className="winning-info" style={{display: 'flex', alignSelf: 'center', marginTop: '20px'}}>
-                        {roundCompleted && calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)) > 0 && (
-                          <p><span style={{color: 'green', fontWeight: 'bold'}}>Voitto:</span> {calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)).toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
-                        )}
-                      </div>
-                      {!roundCompleted && (
-                        <span onClick={() => handleDeleteRow(index)}><FontAwesomeIcon icon={faTrashCan} /></span>
-                      )}
-                    </div>
-                  ))}
-              </div>
-              {rows.length > 0 && (
-                  <button className="btn btn-secondary mt-3" onClick={clearAllSelectedRows}>
-                    Tyhjennä rivit
-                  </button>
+                    ) : null}
+                  </>
+                  )}
+                </div>
               )}
-            </div>
-          </div>
-        </div>
 
-        <div className="row mt-3">
-          <div className="col-md-12">
-            {/* {roundCompleted && !winningNumbersDrawn ? ( */}
-            {paymentCompleted ? (
-              <button className="btn btn-primary" onClick={handleDrawWinningNumbers}>
-                Arvo numerot
-              </button>
-            ) : (
-              newRoundAvailable ? (
-                <button className="btn btn-secondary" onClick={startRound}>
-                  Uusi kierros
-                </button>
-              ) : (
-                renderPaymentButton()
-              )
-            )}
-          </div>
-        </div>
-
-        <div>
-          {winningNumbers.length > 0 && (
-            <WinningNumbers winningNumbers={winningNumbers} selectedRows={rows} />
-          )}
-        </div>
-
-        <div className="winning-numbers-container">
-          {roundCompleted && (
-            <div className="winning-numbers-animation">
-              {renderWinningNumbers()}
-            </div>
-          )}
-        </div>
-
-        <div className="total-winnings">
-          {roundCompleted && winningNumbersDrawn && (
-            <p>Voitit yhteensä: {calculateTotalWinnings().toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
-          )}
-        </div>
-
-        <div>
-          {/* {firstRoundCompleted && winningNumbersDrawn && ( */}
-          {firstRoundCompleted && (
-            <button
-              className="btn btn-secondary mt-2"
-              onClick={() => setAccordionVisible(!accordionVisible)}
-            >
-              Näytä pelitulokset
-            </button>
-          )}
-
-          {accordionVisible && (
-            <Accordion defaultActiveKey="0" flush>
-              {previousGames.map((previousGame, index) => (
-                <Accordion.Item eventKey={index} key={index}>
-                  <div className="card">
-                    <div className="card-header past-game__container">
-                      <Accordion.Header className="mb-0">
-                        <div className="btn btn-link w-100">
-                          <div className="d-flex flex-row justify-content-between align-items-center w-100 past-game__accordion">
-                            <h4>Lotto</h4>
-                            <div className="d-flex flex-column align-items-end">
-                              <span>Hinta: <strong>{previousGame.cost}</strong></span>
-                              <span>Arvottu: <strong>{previousGame.date}</strong></span>
-                            </div>
+              <div className="col-md-6">
+                <div className="d-flex flex-column align-items-end">
+                  <div className="selected-container w-100">
+                    {/* <Rows
+                      rows={rows}
+                      setRows={setRows}
+                      selectedNumbers={selectedNumbers}
+                      setCurrentTotalCost={setCurrentTotalCost}
+                      setTotalCost={setTotalCost}
+                      setSelectedNumbers={setSelectedNumbers}
+                      setNewRowsSelected={setNewRowsSelected}
+                      keyCounter={keyCounter}
+                      setKeyCounter={setKeyCounter}
+                    /> */}
+                    {rows.map((row, index) => (
+                        <div key={row.key} className="selected-row">
+                          <div className="d-flex flex-row align-items-center">
+                            <small className="mx-2">{index + 1}.</small>
+                            <SelectedNumbers
+                              selectedNumbers={row.numbers}
+                              winningNumbers={winningNumbers}
+                              handleResetRow={() => {}}
+                              showResetButton={false}
+                              winningNumbersHistory={[]}
+                              winningNumbersDrawn={winningNumbersDrawn}
+                            />
                           </div>
-                        </div>
-                      </Accordion.Header>
-                    </div>
-
-                    <Accordion.Body>
-                      <div className="card-body">
-                        <div>
-                          <h5><strong>Edellisen kierroksen tiedot:</strong></h5>
-                          <p><strong>Voittorivin numerot:</strong> {previousGame.winningNumbers.sort((a, b) => a - b).join(', ')}</p>
-                          <p><strong>Ajankohta:</strong> {previousGame.timestamp}</p>
-                          <p><strong>Hinta:</strong> {previousGame.cost}</p>
-                          {previousGame.winnings > 0 && (
-                            <p><strong>Voitot:</strong> {previousGame.winnings.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
+                          <div className="winning-info" style={{display: 'flex', alignSelf: 'center', marginTop: '20px'}}>
+                            {roundCompleted && calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)) > 0 && (
+                              <p><span style={{color: 'green', fontWeight: 'bold'}}>Voitto:</span> {calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)).toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
+                            )}
+                          </div>
+                          {!roundCompleted && !paymentCompleted && !newRoundAvailable && (
+                            <span onClick={() => handleDeleteRow(index)}><FontAwesomeIcon icon={faTrashCan} /></span>
                           )}
                         </div>
-                      </div>
-
-                      <table className="w-100 past-game__table table table-striped">
-                        <thead>
-                          <tr>
-                            <th>Rivi</th>
-                            <th>Numerot</th>
-                            <th>Osumia</th>
-                            <th>Voitto</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                        {rows.map((row, index) => (
-                          <tr className="past-game__row" key={row.key}>
-                            <td><small className="mx-2 past-game__index">{index + 1}.</small></td>
-
-                            <td>
-                              <div className="selected-row">
-                                <div className="d-flex flex-row align-items-center">
-                                  <SelectedNumbers
-                                    selectedNumbers={row.numbers}
-                                    winningNumbers={winningNumbers}
-                                    handleResetRow={() => {}}
-                                    showResetButton={false}
-                                    winningNumbersHistory={previousGame.winningNumbers.sort((a, b) => a - b).join(', ')}
-                                  />
-                                </div>
-                              </div>
-                            </td>
-
-                            <td>
-                              {row.numbers.length}
-                            </td>
-
-                            <td>
-                              {roundCompleted &&
-                                calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)) > 0 && (
-                                  <p>
-                                    {calculateWinnings(calculateMatchedNumbers(row.numbers, winningNumbers)).toLocaleString(
-                                      'fi-FI',
-                                      { style: 'currency', currency: 'EUR' }
-                                    )}
-                                  </p>
-                                )}
-                            </td>
-                          </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </Accordion.Body>
+                      ))}
                   </div>
-                </Accordion.Item>
-              ))}
-            </Accordion>
-          )}
-        </div>
+                  {rows.length > 0 && !paymentCompleted && !newRoundAvailable && (
+                      <button className="btn btn-secondary mt-3" onClick={clearAllSelectedRows}>
+                        Tyhjennä rivit
+                      </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="row mt-3">
+              <div className="col-md-12">
+                {/* {roundCompleted && !winningNumbersDrawn ? ( */}
+                {paymentCompleted ? (
+                  <div className="draw-numbers-container">
+                    <button className="draw-numbers-button" onClick={handleDrawWinningNumbers}>
+                      Arvo numerot
+                    </button>
+                  </div>
+                ) : (
+                  newRoundAvailable ? (
+                    <button className="btn btn-secondary" onClick={startRound}>
+                      Uusi kierros
+                    </button>
+                  ) : (
+                    renderPaymentButton()
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="winning-numbers-container mt-3">
+              {winningNumbers.length > 0 && (
+                <WinningNumbers winningNumbers={winningNumbers} selectedRows={rows} />
+              )}
+            </div>
+
+            {/* <div className="winning-numbers-container">
+              {roundCompleted && (
+                <div className="winning-numbers-animation">
+                  {renderWinningNumbers()}
+                </div>
+              )}
+            </div> */}
+
+            <div className="total-winnings">
+              {roundCompleted && winningNumbersDrawn && (
+                <p>Voitit yhteensä: {calculateTotalWinnings().toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
+              )}
+            </div>
+          </Tab>
+          <Tab eventKey="history" title="Pelihistoria">
+            {roundNumber > 0 ? (
+              <p>Pelihistoriasi</p>
+              ) : (
+                <i>Pelaa ensin ainakin yksi kierros, jotta voit nähdä pelihistoriasi.</i>
+              )
+            }
+
+            <div>
+              {/* {firstRoundCompleted && winningNumbersDrawn && ( */}
+              {firstRoundCompleted && (
+                <button
+                  className="btn btn-secondary mt-2"
+                  onClick={() => setAccordionVisible(!accordionVisible)}
+                >
+                  {accordionVisible ? "Piilota" : "Näytä"} pelitulokset
+                </button>
+              )}
+
+              {accordionVisible && <GameHistory 
+                previousGames={previousGames}
+                rows={rows}
+                winningNumbers={winningNumbers}
+                roundCompleted={roundCompleted}
+                calculateWinnings={calculateWinnings}
+                calculateMatchedNumbers={calculateMatchedNumbers}
+                roundNumber={roundNumber}
+              />
+              }
+            </div>
+          </Tab>
+          <Tab eventKey="info" title="Tietoa pelistä">
+            <GameInfo />
+          </Tab>
+          <Tab eventKey="settings" title="Peliasetukset">
+            <GameSettings />
+          </Tab>
+        </Tabs>
       </div>
     </div>
   );

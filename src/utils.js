@@ -1,8 +1,8 @@
-import seedrandom from 'seedrandom'; // Import the seedrandom library
+import seedrandom from 'seedrandom';
 
 export function generateWinningNumbers(seed) {
   const winningNumbers = new Set();
-  const random = seedrandom(seed); // Initialize the random number generator with the seed
+  const random = seedrandom(seed);
   while (winningNumbers.size < 7) {
     winningNumbers.add(Math.floor(random() * 40) + 1);
   }

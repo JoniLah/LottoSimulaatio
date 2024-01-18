@@ -34,6 +34,10 @@
     border-radius: 50%;
 }
 
+.selected-numbers-live .selected-row .selected-number, .past-game__row .selected-number {
+    cursor: default;
+}
+
 .selected-container .selected-row .selected-number.winning-number {
     animation-name: paintBackground;
     animation-duration: 2s; /* Adjust the duration as needed */
