@@ -109,8 +109,17 @@
     }
 }
 
+/* .winning-number-falling {
+    animation: fallAnimation 0.3s ease-out;
+} */
+
 .winning-number-falling {
-    animation: fallAnimation 0.5s ease-out;
+    visibility: hidden;
+    transition: visibility 0s linear 300ms, opacity 0.3s ease-out;
+}
+
+.winning-number-falling.winning-number-active {
+    visibility: visible;
 }
   
 @keyframes fallAnimation {
@@ -122,4 +131,27 @@
       transform: translateY(0);
       opacity: 1;
     }
+}
+
+.winning-numbers-animation {
+    display: flex;
+    flex-direction: row;
+    padding: 16px 0;
+}
+
+.winning-numbers-animation .winning-number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background-color: #f7d200;
+    border: 2px solid #e9c600;
+    color: #141414;
+    font-size: 18px;
+    -webkit-user-select: none;
+    user-select: none;
+    border-radius: 50%;
+    margin: 0 5px;
+    padding: 5px 10px;
 }

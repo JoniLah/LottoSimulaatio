@@ -59,7 +59,7 @@ svg:hover {
 }
   
 .selected-container .winning-number {
-    animation: dropAnimation 1s ease-out;
+    animation: dropAnimation 0.3s ease-out;
 }
 
 .container {

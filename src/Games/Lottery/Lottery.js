@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import LotteryContext from '../../context/LotteryContext';
 import NumberPicker from '../../NumberPicker/NumberPicker';
 import SelectedNumbers from '../../SelectedNumbers/SelectedNumbers';
@@ -33,6 +33,29 @@ function Lottery({ balance, setBalance }) {
   const [roundWinningNumbersCopy, setRoundWinningNumbersCopy] = useState([]);
   const [winningNumbersHistory, setWinningNumbersHistory] = useState([]);
   const [roundNumber, setRoundNumber] = useState(0); // Amount of rounds played, used to previousGame array to index old game stats
+  const [winningNumberVisibility, setWinningNumberVisibility] = useState(Array(winningNumbers.length).fill(false));
+  const [showDetails, setShowDetails] = useState(false);
+
+  useEffect(() => {
+    let timeout;
+
+    if (winningNumbersDrawn) {
+      winningNumbers.forEach((number, index) => {
+        timeout = setTimeout(() => {
+          setWinningNumberVisibility((prevVisibility) => {
+            const newVisibility = [...prevVisibility];
+            newVisibility[index] = true;
+            return newVisibility;
+          });
+        }, (index + 1) * 300);
+      });
+    }
+
+    return () => {
+      clearTimeout(timeout); // Clear the timeout on component unmount or state change
+      setWinningNumberVisibility(Array(winningNumbers.length).fill(false)); // Reset animation
+    }
+  }, [winningNumbersDrawn, winningNumbers]);
 
   useEffect(() => {
     if (roundCompleted && winningNumbersDrawn) {
@@ -40,6 +63,7 @@ function Lottery({ balance, setBalance }) {
       setBalance(prevBalance => prevBalance + totalWinnings);
       savePreviousRoundDetails();
       resetRound();
+      //getResult();
     }
   }, [roundCompleted, winningNumbersDrawn]);
 
@@ -69,7 +93,7 @@ function Lottery({ balance, setBalance }) {
     const round = roundNumber;
     const winnings = calculateTotalWinnings();
     const date = new Date().toLocaleDateString('fi-FI');
-    const roundWinningNumbersCopy = [...roundWinningNumbers];
+    const roundWinningNumbersCopy = [...winningNumbers];
 
     const roundDetails = {
       timestamp,
@@ -109,7 +133,7 @@ function Lottery({ balance, setBalance }) {
 
   const handleResetRow = () => {
     setSelectedNumbers([]);
-  }
+  };
 
   const handleDeleteRow = (rowIndex) => {
     const updatedRows = rows.filter((_, index) => index !== rowIndex);
@@ -255,13 +279,39 @@ function Lottery({ balance, setBalance }) {
         )}
       </button>
     );
-  }
+  };
+
+  // const renderWinningNumbers = () => {
+  //   // return winningNumbers.map((number, index) => (
+  //   //   <div
+  //   //     key={index}
+  //   //     className={`winning-number number-${number} ${winningNumbersDrawn ? 'winning-number-active winning-number-falling' : ''}`}
+  //   //     style={{ animationDelay: `${index * 300}ms` }} // Delay each number by 300ms
+  //   //   >
+  //   //     {number}
+  //   //   </div>
+  //   // ));
+  //   return winningNumbers.map((number, index) => (
+  //     <div
+  //       key={index}
+  //       className={`winning-number number-${number} ${winningNumbersDrawn && winningNumberVisibility[index] ? 'winning-number-active winning-number-falling' : ''}`}
+  //       style={{ animationDelay: `${index * 300}ms` }}
+  //     >
+  //       {number}
+  //     </div>
+  //   ));
+  // };
 
   const renderWinningNumbers = () => {
     return winningNumbers.map((number, index) => (
       <div
         key={index}
-        className={`winning-number number-${number} ${winningNumbersDrawn ? 'winning-number-active winning-number-falling' : ''}`}
+        className={`winning-number number-${number} ${winningNumbersDrawn && winningNumberVisibility[index] ? 'winning-number-active winning-number-falling' : ''}`}
+        style={{
+          animationDelay: `${300}ms`, // Same initial delay for each number
+          transitionDelay: `${(index + 1) * 300}ms`, // Delay before animation starts
+          opacity: winningNumbersDrawn && winningNumberVisibility[index] ? 1 : 0, // Control visibility with opacity
+        }}
       >
         {number}
       </div>
@@ -290,24 +340,24 @@ function Lottery({ balance, setBalance }) {
             }
 
             <div className="row">
+              {newRoundAvailable && (
+                <div className="col-md-6">
+                  <h2>Voittonumerot:</h2>
+                  <div className="winning-numbers-animation">
+                    {renderWinningNumbers()}
+                  </div>
+                </div>
+              )}
+
               {paymentCompleted ?
                 (
                 <div className="col-md-6">
-                  {newRoundAvailable && (
-                    <div className="winning-numbers-animation">
-                      {winningNumbersDrawn && (
-                        winningNumbers.map((number) => {
-                          return number;
-                        })
-                      )}
-                      {/* {renderWinningNumbers()} */}
-                    </div>
-                  )}
+                  <i>Voittonumerot näkyvät tässä, kun numerot on arvottu.</i>
                 </div>
                 ) : (
-                  <div className="col-md-6">
+                  <>
                   {!newRoundAvailable && (
-                    <>
+                    <div className="col-md-6">
                     {selectedNumbers.length < 7 && (
                       <small><strong>Valitse {7 - selectedNumbers.length === 1 ? 'vielä 1 numero' : `${7 - selectedNumbers.length} numeroa`}</strong></small>
                     )}
@@ -333,9 +383,9 @@ function Lottery({ balance, setBalance }) {
                         ) : null}
                       </div>
                     ) : null}
-                  </>
+                  </div>
                   )}
-                </div>
+                </>
               )}
 
               <div className="col-md-6">
@@ -406,31 +456,28 @@ function Lottery({ balance, setBalance }) {
               </div>
             </div>
 
-            <div className="winning-numbers-container mt-3">
-              {winningNumbers.length > 0 && (
-                <WinningNumbers winningNumbers={winningNumbers} selectedRows={rows} />
-              )}
-            </div>
-
-            {/* <div className="winning-numbers-container">
-              {roundCompleted && (
-                <div className="winning-numbers-animation">
-                  {renderWinningNumbers()}
-                </div>
-              )}
-            </div> */}
-
             <div className="total-winnings">
               {roundCompleted && winningNumbersDrawn && (
                 <p>Voitit yhteensä: {calculateTotalWinnings().toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
               )}
             </div>
+
+            {roundNumber > 0 && 
+              <div className="winning-numbers-container mt-3">
+              {winningNumbers.length > 0 && (
+                  <WinningNumbers winningNumbers={winningNumbers} selectedRows={rows} />
+                )}
+              </div>
+            }
+            
           </Tab>
           <Tab eventKey="history" title="Pelihistoria">
             {roundNumber > 0 ? (
               <p>Pelihistoriasi</p>
               ) : (
-                <i>Pelaa ensin ainakin yksi kierros, jotta voit nähdä pelihistoriasi.</i>
+                <div className="d-flex flex-row justify-content-center m-4">
+                  <i>Pelaa ainakin yksi kierros, jotta voit nähdä pelihistoriasi.<br /><strong>Huom!</strong> Mikäli päivitit sivun tai vaihdoit peliä, pelihistoriasi häviää!</i>
+                </div>
               )
             }
 
