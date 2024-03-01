@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import './WinningNumbers.css';
-import LotteryContext from '../context/LotteryContext';
+import LotteryContext from '../../context/LotteryContext';
 
 const WinningNumbers = ({ selectedRows }) => {
-  const { winningNumbers } = useContext(LotteryContext); 
+  const { winningNumbers } = useContext(LotteryContext);
 
   //const [winningNumbers, setWinningNumbers] = useState([]);
   const [winningNumbersGenerated, setWinningNumbersGenerated] = useState(false);

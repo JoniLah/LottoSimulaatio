@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Accordion } from 'react-bootstrap';
-import SelectedNumbers from '../../../SelectedNumbers/SelectedNumbers';
-import LotteryContext from '../../../context/LotteryContext';
-import './GameHistory.css';
+import SelectedNumbers from '../SelectedNumbers/SelectedNumbers';
+import SettingsContext from '../../context/SettingsContext';
+import EurojackpotContext from '../../context/EurojackpotContext';
+//import './GameHistory.css';
 
 const GameHistory = (props) => {
-    const { winningPrizes } = useContext(LotteryContext);
+    const { winningPrizes } = useContext(EurojackpotContext);
+    const { hideRows } = useContext(SettingsContext);
 
     const calculateMatchedNumbers = (selectedNumbers, winningNumbers) => {
         return selectedNumbers.filter(number => winningNumbers.includes(number)).length;
@@ -38,7 +40,7 @@ const GameHistory = (props) => {
                             <Accordion.Header className="mb-0">
                                 <div className="btn btn-link w-100">
                                     <div className="d-flex flex-row justify-content-between align-items-center w-100 past-game__accordion">
-                                        <h4>Lotto</h4>
+                                        <h4>Eurojackpot</h4>
                                         <div className="d-flex flex-column align-items-end">
                                             <span>Hinta: <strong>{game.cost}</strong></span>
                                             <span>Arvottu: <strong>{game.date}</strong></span>
@@ -56,12 +58,13 @@ const GameHistory = (props) => {
                                     <p><strong>Voittorivin numerot:</strong> {game.winningNumbers.sort((a, b) => a - b).join(', ')}</p>
                                     <p><strong>Ajankohta:</strong> {game.timestamp}</p>
                                     <p><strong>Hinta:</strong> {game.cost}</p>
-                                    {game.winnings > 0 && (
+                                    {game.winnings > 0 ? (
                                     <p><strong>Voitot:</strong> {game.winnings.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
-                                    )}
+                                    ) : (<strong>Ei voittoa</strong>)}
                                 </div>
                             </div>
 
+                            {!hideRows ? (
                             <table className="w-100 past-game__table table table-striped">
                                 <thead>
                                     <tr>
@@ -73,42 +76,48 @@ const GameHistory = (props) => {
                                 </thead>
 
                                 <tbody>
-                                {props.rows.map((row, index) => (
-                                    <tr className="past-game__row" key={row.key}>
-                                        <td><small className="mx-2 past-game__index">{index + 1}.</small></td>
+                                    {props.rows.map((row, index) => (
+                                        <tr className="past-game__row" key={row.key}>
+                                            <td><small className="mx-2 past-game__index">{index + 1}.</small></td>
 
-                                        <td>
-                                            <div className="selected-row">
-                                                <div className="d-flex flex-row align-items-center">
-                                                    <SelectedNumbers
-                                                        selectedNumbers={row.numbers}
-                                                        winningNumbers={game.winningNumbers}
-                                                        handleResetRow={() => {}}
-                                                        showResetButton={false}
-                                                        winningNumbersHistory={game.winningNumbers.sort((a, b) => a - b).join(', ')}
-                                                    />
+                                            <td>
+                                                <div className="selected-row">
+                                                    <div className="d-flex flex-row align-items-center">
+                                                        <SelectedNumbers
+                                                            selectedNumbers={row.numbers}
+                                                            selectedExtraNumbers={row.extraNumbers}
+                                                            winningNumbers={game.winningNumbers}
+                                                            winningExtraNumbers={game.winningExtraNumbers}
+                                                            handleResetRow={() => {}}
+                                                            showResetButton={false}
+                                                            winningNumbersHistory={game.winningNumbers.sort((a, b) => a - b).join(', ')}
+                                                            winningExtraNumbersHistory={game.winningExtraNumbers.sort((a, b) => a - b).join(', ')}
+                                                        />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        <td>
-                                            {calculateMatchedNumbers(row.numbers, game.winningNumbers)}
-                                        </td>
+                                            <td>
+                                                {calculateMatchedNumbers(row.numbers, game.winningNumbers)}
+                                            </td>
 
-                                        <td>
-                                            {props.calculateWinnings(props.calculateMatchedNumbers(row.numbers, game.winningNumbers)) > 0 && (
-                                                <>
-                                                {winningPrizes[props.calculateMatchedNumbers(row.numbers, game.winningNumbers)].toLocaleString('fi-FI', {
-                                                    style: 'currency',
-                                                    currency: 'EUR',
-                                                })}
-                                                </>
-                                            )}
-                                        </td>
-                                    </tr>
+                                            <td>
+                                                {props.calculateWinnings(props.calculateMatchedNumbers(row.numbers, game.winningNumbers)) > 0 && (
+                                                    <>
+                                                    {winningPrizes[props.calculateMatchedNumbers(row.numbers, game.winningNumbers)].toLocaleString('fi-FI', {
+                                                        style: 'currency',
+                                                        currency: 'EUR',
+                                                    })}
+                                                    </>
+                                                )}
+                                            </td>
+                                        </tr>
                                     ))}
                                 </tbody>
-                            </table>
+                            </table>)
+                            : (
+                                <div className="d-flex align-items-center"><i>Rivit on piilotettu. Aseta ne näkyviksi asetuksista.</i></div>
+                            )}
                         </Accordion.Body>
                     </div>
                 </div>

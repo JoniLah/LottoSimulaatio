@@ -1,14 +1,16 @@
 import React, { useContext } from 'react';
-import LotteryContext from '../../../context/LotteryContext';
+import LotteryContext from '../../../../context/LotteryContext';
+import GlobalSettings from '../../../GlobalSettings/GlobalSettings';
 
 const GameSettings = () => {
-    const { winningPrizes } = useContext(LotteryContext);
+    const { winningPrizes, rowPrice, setRowPrice } = useContext(LotteryContext);
 
     return (
         <div>
             <div>
+                <h2>Pelikohtaiset asetukset</h2>
                 <h3>Muuta rivin hintaa</h3>
-                <p>Yksi rivi: 1€</p>
+                <p>Yhden rivin hinta: {rowPrice.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' })}</p>
             </div>
 
             <div>
@@ -23,11 +25,8 @@ const GameSettings = () => {
                     <li>1 oikein: {winningPrizes[1].toLocaleString("fi-FI")}</li>
                 </ul>
             </div>
-
-            <div>
-                <h3>Animaatiot</h3>
-                <input type="checkbox" name="winning-animation" /> Pelianimaatiot
-            </div>
+            <hr />
+            <GlobalSettings />
         </div>
     );
 }

@@ -1,20 +1,20 @@
 import React from 'react';
 import './NumberPicker.css';
 
-const NumberPicker = ({ onNumberClick, selectedNumbers }) => {
-  const handleNumberClick = (number) => {
-    onNumberClick(number);
+const NumberPicker = ({ totalNumbers, onNumberClick, selectedNumbers, extraNumbers }) => {
+  const handleNumberClick = (number, extraNumbers) => {
+    onNumberClick(number, extraNumbers);
   };
 
   const renderNumbers = () => {
     const numbers = [];
-    for (let i = 1; i <= 40; i++) {
+    for (let i = 1; i <= totalNumbers; i++) {
       const isSelected = selectedNumbers.includes(i);
       numbers.push(
         <div
           key={i}
           className={`number ${isSelected ? 'selected' : ''}`}
-          onClick={() => handleNumberClick(i)}
+          onClick={() => handleNumberClick(i, extraNumbers)}
         >
           {i}
         </div>

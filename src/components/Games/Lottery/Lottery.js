@@ -1,5 +1,5 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
-import LotteryContext from '../../context/LotteryContext';
+import { useState, useEffect, useContext } from 'react';
+import LotteryContext from '../../../context/LotteryContext';
 import NumberPicker from '../../NumberPicker/NumberPicker';
 import SelectedNumbers from '../../SelectedNumbers/SelectedNumbers';
 import WinningNumbers from '../../WinningNumbers/WinningNumbers';
@@ -11,12 +11,26 @@ import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import './Lottery.css';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
+import { handleAddRow, handleResetRow, handleDeleteRow, clearAllSelectedRows, pickRandomRows } from '../../../utils/rowsUtils';
+import { savePreviousRoundDetails, startRound, resetRound, handleNewRound } from '../../../utils/gameUtils';
 
 function Lottery({ balance, setBalance }) {
-  const { winningPrizes, getWinningNumbers, winningNumbers } = useContext(LotteryContext);
-
+  const { 
+    winningPrizes,
+    getWinningNumbers,
+    winningNumbers,
+    winningExtraNumbers,
+    rowPrice,
+    mainNumbers,
+    extraNumbers,
+    totalMainNumbers,
+    totalExtraNumbers,
+    extraNumbersSelectable
+  } = useContext(LotteryContext);
+  
   const [winningNumbersDrawn, setWinningNumbersDrawn] = useState(false);
   const [selectedNumbers, setSelectedNumbers] = useState([]);
+  const [selectedExtraNumbers, setSelectedExtraNumbers] = useState([]);
   const [rows, setRows] = useState([]);
   const [totalCost, setTotalCost] = useState(0);
   const [currentTotalCost, setCurrentTotalCost] = useState(0);
@@ -30,17 +44,18 @@ function Lottery({ balance, setBalance }) {
   const [previousGames, setPreviousGames] = useState([]);
   const [firstRoundCompleted, setFirstRoundCompleted] = useState(false);
   const [newRoundAvailable, setNewRoundAvailable] = useState(false);
-  const [roundWinningNumbersCopy, setRoundWinningNumbersCopy] = useState([]);
   const [winningNumbersHistory, setWinningNumbersHistory] = useState([]);
+  const [winningExtraNumbersHistory, setWinningExtraNumbersHistory] = useState([]);
   const [roundNumber, setRoundNumber] = useState(0); // Amount of rounds played, used to previousGame array to index old game stats
   const [winningNumberVisibility, setWinningNumberVisibility] = useState(Array(winningNumbers.length).fill(false));
   const [showDetails, setShowDetails] = useState(false);
+  const [hideRows, setHideRows] = useState(false);
 
   useEffect(() => {
     let timeout;
 
     if (winningNumbersDrawn) {
-      winningNumbers.forEach((number, index) => {
+      winningNumbers.forEach((_, index) => {
         timeout = setTimeout(() => {
           setWinningNumberVisibility((prevVisibility) => {
             const newVisibility = [...prevVisibility];
@@ -61,111 +76,19 @@ function Lottery({ balance, setBalance }) {
     if (roundCompleted && winningNumbersDrawn) {
       const totalWinnings = calculateTotalWinnings();
       setBalance(prevBalance => prevBalance + totalWinnings);
-      savePreviousRoundDetails();
-      resetRound();
-      //getResult();
+      savePreviousRoundDetails(
+        setPreviousGames,
+        setPreviousRoundDetails,
+        totalCost,
+        roundNumber,
+        selectedNumbers,
+        winningNumbers,
+        winningExtraNumbers,
+        calculateTotalWinnings
+      );
+      resetRound(setWinningNumbersDrawn, setRoundCompleted);
     }
   }, [roundCompleted, winningNumbersDrawn]);
-
-  const startRound = () => {
-    setRoundCompleted(true);
-    setNewRoundAvailable(false);
-
-    setTimeout(() => {
-      const winningNumberElements = document.querySelectorAll('.winning-number');
-      winningNumberElements.forEach((element) => {
-        element.classList.add('winning-number-active');
-      });
-    }, 100);
-  };
-
-  const resetRound = () => {
-    //setWinningNumbers([]);
-    setWinningNumbersDrawn(false);
-    setRoundCompleted(false);
-    //setNewRowsSelected(false);
-  };
-
-  /* GAME LOGIC */
-  const savePreviousRoundDetails = () => {
-    const timestamp = new Date().toLocaleString('fi-FI');
-    const cost = totalCost.toLocaleString('fi-FI', { style: 'currency', currency: 'EUR' });
-    const round = roundNumber;
-    const winnings = calculateTotalWinnings();
-    const date = new Date().toLocaleDateString('fi-FI');
-    const roundWinningNumbersCopy = [...winningNumbers];
-
-    const roundDetails = {
-      timestamp,
-      roundNumber: round,
-      selectedNumbers,
-      winningNumbers: roundWinningNumbersCopy,
-      cost,
-      winnings,
-      date
-    };
-
-    setPreviousGames(prevGames => [...prevGames, roundDetails]);
-    setPreviousRoundDetails(roundDetails);
-  };
-
-  const handleNewRound = (newWinningNumbers) => {
-    // Update the winning numbers history with the new round's winning numbers
-    //setWinningNumbersHistory([...winningNumbersHistory, newWinningNumbers]);
-    setRoundNumber((prevRound) => prevRound +1);
-    setWinningNumbersHistory((prevHistory) => [...prevHistory, newWinningNumbers]);
-  };
-
-  /* ROWS LOGIC */
-  const handleAddRow = () => {
-    if (selectedNumbers.length === 7) {
-      const newRowKey = `row_${performance.now()}`;
-      setRows((prevRows) => [
-        ...prevRows,
-        { key: newRowKey, numbers: selectedNumbers },
-      ]);
-      setCurrentTotalCost((prevCost) => prevCost + 1);
-      setSelectedNumbers([]);
-  
-      setNewRowsSelected(true);
-    }
-  };
-
-  const handleResetRow = () => {
-    setSelectedNumbers([]);
-  };
-
-  const handleDeleteRow = (rowIndex) => {
-    const updatedRows = rows.filter((_, index) => index !== rowIndex);
-    setRows(updatedRows);
-    setTotalCost(prevCost => prevCost - 1);
-  };
-
-  const clearAllSelectedRows = () => {
-    setRows([]);
-    setTotalCost(0);
-    setNewRowsSelected(false);
-  };
-
-  const pickRandomRows = (count) => {
-    for (let i = 0; i < count; i++) {
-      const randomNumbers = [];
-      while (randomNumbers.length < 7) {
-        const randomNumber = Math.floor(Math.random() * 40) + 1;
-        if (!randomNumbers.includes(randomNumber)) {
-          randomNumbers.push(randomNumber);
-        }
-      }
-      const newRowKey = `row_${performance.now()}_${keyCounter + i}`;
-      setRows((prevRows) => [
-        ...prevRows,
-        { key: newRowKey, numbers: randomNumbers },
-      ]);
-      setTotalCost((prevCost) => prevCost + 1);
-    }
-    setKeyCounter((prevKeyCounter) => prevKeyCounter + count);
-    setNewRowsSelected(true);
-  };
 
   /* PAYMENT LOGIC */
   const handlePayment = () => {
@@ -200,18 +123,15 @@ function Lottery({ balance, setBalance }) {
       }
 
       const newWinningNumbers = getWinningNumbers(Date.now());
+      const newWinningExtraNumbers = getWinningNumbers(Date.now());
       setRoundWinningNumbers(winningNumbers);
 
-      // Call handleNewRound with the newWinningNumbers
-      handleNewRound(winningNumbers);
+      handleNewRound(setRoundNumber, setWinningNumbersHistory, newWinningNumbers, setWinningExtraNumbersHistory, newWinningExtraNumbers);
       
-      //setRoundCompleted(true);
       setPaymentCompleted(false);
       setNewRoundAvailable(true);
     }
   };
-
-
 
   const handleNumberClick = (number) => {
     if (selectedNumbers.includes(number)) {
@@ -223,13 +143,9 @@ function Lottery({ balance, setBalance }) {
     }
   };
 
-
-
   const calculateMatchedNumbers = (selectedNumbers, winningNumbers) => {
     return selectedNumbers.filter(number => winningNumbers.includes(number)).length;
   };
-
-  
 
   const handleDrawRemainingNumbers = () => {
     const remainingNumbers = generateRandomNumbers();
@@ -270,7 +186,7 @@ function Lottery({ balance, setBalance }) {
       <button
         key={count}
         className="random-rows"
-        onClick={() => pickRandomRows(count)}
+        onClick={() => handlePickRandomRowsClick(count)}
       >
         {count === 1 ? (
           `Valitse ${formattedCount} satunnainen rivi`
@@ -280,27 +196,6 @@ function Lottery({ balance, setBalance }) {
       </button>
     );
   };
-
-  // const renderWinningNumbers = () => {
-  //   // return winningNumbers.map((number, index) => (
-  //   //   <div
-  //   //     key={index}
-  //   //     className={`winning-number number-${number} ${winningNumbersDrawn ? 'winning-number-active winning-number-falling' : ''}`}
-  //   //     style={{ animationDelay: `${index * 300}ms` }} // Delay each number by 300ms
-  //   //   >
-  //   //     {number}
-  //   //   </div>
-  //   // ));
-  //   return winningNumbers.map((number, index) => (
-  //     <div
-  //       key={index}
-  //       className={`winning-number number-${number} ${winningNumbersDrawn && winningNumberVisibility[index] ? 'winning-number-active winning-number-falling' : ''}`}
-  //       style={{ animationDelay: `${index * 300}ms` }}
-  //     >
-  //       {number}
-  //     </div>
-  //   ));
-  // };
 
   const renderWinningNumbers = () => {
     return winningNumbers.map((number, index) => (
@@ -316,6 +211,27 @@ function Lottery({ balance, setBalance }) {
         {number}
       </div>
     ));
+  };
+
+  const handleAddRowClick = () => {
+    handleAddRow(rows, setRows, rowPrice, selectedNumbers, setSelectedNumbers, selectedExtraNumbers, setSelectedNumbers, totalCost, setTotalCost, setNewRowsSelected, keyCounter, mainNumbers);
+  };
+  
+  const handleResetRowClick = () => {
+    handleResetRow(setSelectedNumbers);
+  };
+  
+  const handleDeleteRowClick = (rowIndex) => {
+    handleDeleteRow(rows, setRows, rowIndex, setTotalCost);
+  };
+  
+  const handleClearAllRowsClick = () => {
+    clearAllSelectedRows(setRows, setTotalCost, setNewRowsSelected);
+  };
+  
+  const handlePickRandomRowsClick = (count) => {
+    pickRandomRows(count, setRows, setTotalCost, setKeyCounter, setNewRowsSelected, keyCounter, selectedNumbers,
+      mainNumbers, totalMainNumbers, extraNumbers, totalExtraNumbers, extraNumbersSelectable, rowPrice);
   };
 
   return (
@@ -361,20 +277,20 @@ function Lottery({ balance, setBalance }) {
                     {selectedNumbers.length < 7 && (
                       <small><strong>Valitse {7 - selectedNumbers.length === 1 ? 'vielä 1 numero' : `${7 - selectedNumbers.length} numeroa`}</strong></small>
                     )}
-                    <NumberPicker selectedNumbers={selectedNumbers} onNumberClick={handleNumberClick} />
+                    <NumberPicker totalNumbers={totalMainNumbers} selectedNumbers={selectedNumbers} onNumberClick={handleNumberClick} />
                     {selectedNumbers.length > 0 ? (
                       <div className="selected-numbers-live">
                         <SelectedNumbers 
                           selectedNumbers={selectedNumbers}
                           winningNumbers={winningNumbers}
-                          handleResetRow={handleResetRow}
+                          handleResetRow={handleResetRowClick}
                           showResetButton={true}
                           onDrawRemainingNumbers={handleDrawRemainingNumbers}
                           winningNumbersHistory={[]}
                         />
                         {selectedNumbers.length >= 7 ? (
                         <button
-                          onClick={handleAddRow}
+                          onClick={handleAddRowClick}
                           disabled={selectedNumbers.length !== 7}
                           className="btn btn-warning mt-2"
                         >
@@ -391,17 +307,6 @@ function Lottery({ balance, setBalance }) {
               <div className="col-md-6">
                 <div className="d-flex flex-column align-items-end">
                   <div className="selected-container w-100">
-                    {/* <Rows
-                      rows={rows}
-                      setRows={setRows}
-                      selectedNumbers={selectedNumbers}
-                      setCurrentTotalCost={setCurrentTotalCost}
-                      setTotalCost={setTotalCost}
-                      setSelectedNumbers={setSelectedNumbers}
-                      setNewRowsSelected={setNewRowsSelected}
-                      keyCounter={keyCounter}
-                      setKeyCounter={setKeyCounter}
-                    /> */}
                     {rows.map((row, index) => (
                         <div key={row.key} className="selected-row">
                           <div className="d-flex flex-row align-items-center">
@@ -421,13 +326,13 @@ function Lottery({ balance, setBalance }) {
                             )}
                           </div>
                           {!roundCompleted && !paymentCompleted && !newRoundAvailable && (
-                            <span onClick={() => handleDeleteRow(index)}><FontAwesomeIcon icon={faTrashCan} /></span>
+                            <span onClick={() => handleDeleteRowClick(index)}><FontAwesomeIcon icon={faTrashCan} /></span>
                           )}
                         </div>
                       ))}
                   </div>
                   {rows.length > 0 && !paymentCompleted && !newRoundAvailable && (
-                      <button className="btn btn-secondary mt-3" onClick={clearAllSelectedRows}>
+                      <button className="btn btn-secondary mt-3" onClick={handleClearAllRowsClick}>
                         Tyhjennä rivit
                       </button>
                   )}
@@ -446,7 +351,7 @@ function Lottery({ balance, setBalance }) {
                   </div>
                 ) : (
                   newRoundAvailable ? (
-                    <button className="btn btn-secondary" onClick={startRound}>
+                    <button className="btn btn-secondary" onClick={() => startRound(setRoundCompleted, setNewRoundAvailable)}>
                       Uusi kierros
                     </button>
                   ) : (
@@ -482,7 +387,6 @@ function Lottery({ balance, setBalance }) {
             }
 
             <div>
-              {/* {firstRoundCompleted && winningNumbersDrawn && ( */}
               {firstRoundCompleted && (
                 <button
                   className="btn btn-secondary mt-2"
